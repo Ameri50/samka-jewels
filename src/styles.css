@@ -1,0 +1,193 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Samka — Joyería artesanal premium
+   Paleta: crema cálido, dorado bruñido, negro suave, acentos rosados.
+*/
+
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --radius-3xl: calc(var(--radius) + 20px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+
+  --shadow-soft: 0 4px 24px -8px color-mix(in oklab, var(--ink) 12%, transparent);
+  --shadow-luxe: 0 30px 60px -25px color-mix(in oklab, var(--gold-deep) 35%, transparent);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 8px 30px -10px rgba(120, 90, 30, 0.10);
+
+  --gradient-gold: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+  --gradient-cream: linear-gradient(180deg, oklch(0.985 0.012 80) 0%, oklch(0.965 0.018 75) 100%);
+  --gradient-hero: linear-gradient(120deg, oklch(0.97 0.018 75) 0%, oklch(0.93 0.03 70) 100%);
+
+  --transition-luxe: 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --radius: 0.875rem;
+
+  /* Crema cálido */
+  --background: oklch(0.985 0.012 80);
+  --foreground: oklch(0.18 0.02 60);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 60);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 60);
+
+  /* Dorado bruñido */
+  --primary: oklch(0.62 0.13 75);
+  --primary-foreground: oklch(0.99 0.005 80);
+
+  --secondary: oklch(0.94 0.02 75);
+  --secondary-foreground: oklch(0.22 0.02 60);
+
+  --muted: oklch(0.95 0.012 80);
+  --muted-foreground: oklch(0.45 0.02 60);
+
+  --accent: oklch(0.93 0.04 65);
+  --accent-foreground: oklch(0.22 0.02 60);
+
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0.005 80);
+
+  --border: oklch(0.9 0.012 80);
+  --input: oklch(0.92 0.012 80);
+  --ring: oklch(0.62 0.13 75);
+
+  /* Tokens custom Samka */
+  --gold: oklch(0.74 0.13 80);
+  --gold-deep: oklch(0.55 0.13 70);
+  --cream: oklch(0.97 0.018 80);
+  --ink: oklch(0.18 0.02 60);
+
+  --chart-1: oklch(0.62 0.13 75);
+  --chart-2: oklch(0.74 0.13 80);
+  --chart-3: oklch(0.55 0.13 70);
+  --chart-4: oklch(0.45 0.04 65);
+  --chart-5: oklch(0.85 0.04 70);
+
+  --sidebar: oklch(0.985 0.012 80);
+  --sidebar-foreground: oklch(0.18 0.02 60);
+  --sidebar-primary: oklch(0.62 0.13 75);
+  --sidebar-primary-foreground: oklch(0.99 0.005 80);
+  --sidebar-accent: oklch(0.94 0.02 75);
+  --sidebar-accent-foreground: oklch(0.22 0.02 60);
+  --sidebar-border: oklch(0.9 0.012 80);
+  --sidebar-ring: oklch(0.62 0.13 75);
+}
+
+.dark {
+  --background: oklch(0.18 0.02 60);
+  --foreground: oklch(0.97 0.012 80);
+  --card: oklch(0.22 0.02 60);
+  --card-foreground: oklch(0.97 0.012 80);
+  --primary: oklch(0.74 0.13 80);
+  --primary-foreground: oklch(0.18 0.02 60);
+  --border: oklch(0.3 0.02 60);
+  --input: oklch(0.3 0.02 60);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .bg-gradient-gold { background: var(--gradient-gold); }
+  .bg-gradient-cream { background: var(--gradient-cream); }
+  .bg-gradient-hero { background: var(--gradient-hero); }
+  .shadow-luxe { box-shadow: var(--shadow-luxe); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+
+  .glass {
+    background: color-mix(in oklab, white 70%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid color-mix(in oklab, white 60%, transparent);
+  }
+
+  .hover-lift {
+    transition: transform var(--transition-luxe), box-shadow var(--transition-luxe);
+  }
+  .hover-lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-luxe); }
+
+  .product-img {
+    transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .group:hover .product-img { transform: scale(1.06); }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    animation: reveal 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .reveal-delay-1 { animation-delay: 120ms; }
+  .reveal-delay-2 { animation-delay: 240ms; }
+  .reveal-delay-3 { animation-delay: 360ms; }
+
+  @keyframes reveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--gold) 30%, transparent), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.5s infinite;
+  }
+
+  .divider-gold {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+}
