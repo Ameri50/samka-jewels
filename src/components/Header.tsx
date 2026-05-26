@@ -26,7 +26,8 @@ export function Header() {
   }, []);
 
   // Calculamos el total sumando las cantidades de cada artículo de forma reactiva
-  const cartCount = isMounted && items ? items.reduce((total, item) => total + item.quantity, 0) : 0;
+  const cartCount =
+    isMounted && items ? items.reduce((total, item) => total + item.quantity, 0) : 0;
 
   return (
     <header className="sticky top-0 z-40 glass border-b border-border/60">
@@ -67,7 +68,7 @@ export function Header() {
           >
             <User className="h-5 w-5" />
           </Link>
-          
+
           {/* 🛒 Icono del Carrito - Ahora setOpen(true) despertará al CartDrawer global */}
           <button
             type="button"
@@ -82,7 +83,7 @@ export function Header() {
               </span>
             )}
           </button>
-          
+
           {/* Botón Hamburguesa (Móvil) */}
           <button
             type="button"
