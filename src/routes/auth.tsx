@@ -12,43 +12,37 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🚀 DETECTOR INTELIGENTE DE ROL (CORREGIDO Y SIN ERRORES DE TS)
   useEffect(() => {
     const checkUserRoleAndNavigate = async (userId: string) => {
       try {
-        // Consultamos únicamente la tabla de roles usando el ID del usuario autenticado
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", userId)
-          .single();
+          .maybeSingle(); // ← cambiado de .single() a .maybeSingle()
 
-        if (error) throw error;
-
-        // Si el rol guardado en "user_roles" es admin, abrimos el paso
         if (data?.role === "admin") {
           toast.success("¡Bienvenido, Administrador!");
           navigate({ to: "/admin" });
         } else {
-          toast.error("Acceso denegado: Tu cuenta no tiene permisos de administrador.");
-          await supabase.auth.signOut();
+          // Customers o usuarios sin rol van a /cuenta
+          toast.success("¡Bienvenido!");
+          navigate({ to: "/cuenta" });
         }
       } catch (err) {
         console.error("Error validando rol:", err);
-        toast.error("No se pudieron verificar tus permisos de administración.");
-        // Si hay error en la consulta, cerramos sesión para limpiar tokens corruptos
-        await supabase.auth.signOut();
+        // Ante cualquier error, redirigir a /cuenta
+        toast.success("¡Bienvenido!");
+        navigate({ to: "/cuenta" });
       }
     };
 
-    // 1. Verificar sesión persistente al cargar la página
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         checkUserRoleAndNavigate(session.user.id);
       }
     });
 
-    // 2. Escuchar el cambio de estado en tiempo real (OAuth de Google)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === "SIGNED_IN" || event === "USER_UPDATED") && session?.user) {
         checkUserRoleAndNavigate(session.user.id);
@@ -58,7 +52,6 @@ function AuthPage() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // 🔵 CONEXIÓN CON GOOGLE OAUTH
   const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -77,7 +70,6 @@ function AuthPage() {
     }
   };
 
-  // Función tradicional por correo
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
@@ -104,7 +96,6 @@ function AuthPage() {
       </p>
 
       <div className="space-y-4">
-        {/* BOTÓN DE GOOGLE */}
         <button
           type="button"
           onClick={handleGoogleLogin}
@@ -125,7 +116,6 @@ function AuthPage() {
           <div className="grow border-t border-border"></div>
         </div>
 
-        {/* Formulario clásico secundario */}
         <form onSubmit={handleEmailLogin} className="space-y-3 text-left">
           <div>
             <label className="text-xs tracking-widest uppercase text-muted-foreground font-medium">
@@ -139,7 +129,7 @@ function AuthPage() {
               className="mt-1 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-gold/40 transition"
               required
             />
-          </div>
+            </div>
           <button
             type="submit"
             disabled={loading}

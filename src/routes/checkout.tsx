@@ -94,7 +94,8 @@ function CheckoutPage() {
           notes: form.notes || null,
           subtotal,
           shipping: SHIPPING,
-          total_amount: total, // Aseguramos compatibilidad directa
+          total: total,
+          total_amount: total,
           payment_method: method, 
           // Guardamos el código de operación de manera nativa e independiente de las notas
           payment_reference: operationCode.trim(), 
