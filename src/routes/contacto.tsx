@@ -311,7 +311,7 @@ function ContactPage() {
                 margin: 0,
               }}
             >
-              Tu historia de <em style={{ fontStyle: "italic", color: "#c9a84c" }}>nos inspira</em>
+              Tu historia, <em style={{ fontStyle: "italic", color: "#c9a84c" }}> nos inspira</em>
             </h2>
           </div>
 
