@@ -1,215 +1,181 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
 
-// 🔐 El Guardián del Admin: Validación dinámica y real por base de datos
 export const Route = createFileRoute("/admin")({
-  beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // 1. Si no hay sesión iniciada en la pestaña, al Login (/auth)
-    if (!session) {
-      toast.error("Debes iniciar sesión para acceder al panel");
-      throw redirect({ to: "/auth" });
-    }
-
-    try {
-      // 2. Consulta dinámica a la tabla de roles usando el ID del usuario logueado
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .single();
-
-      // Si hay un error en la consulta o el rol no es 'admin', se le deniega la entrada
-      if (error || data?.role !== "admin") {
-        toast.error("Acceso denegado: No tienes permisos de administrador");
-        throw redirect({ to: "/" }); // Expulsado al inicio de la tienda
-      }
-    } catch (catchError) {
-      // Si es una redirección propia de TanStack, la dejamos pasar para que ejecute el rebote
-      if (catchError && typeof catchError === "object" && "to" in catchError) {
-        throw catchError;
-      }
-      
-      // Para cualquier otro error inesperado de red o base de datos, protegemos la ruta
-      console.error("Error en el guardián de administración:", catchError);
-      toast.error("Error de seguridad al validar tus permisos");
-      throw redirect({ to: "/" });
-    }
-  },
-  head: () => ({ meta: [{ title: "Panel de Control — Samka" }] }),
-  component: AdminPanelPage,
+  component: AuthPage,
 });
 
-type OrderTable = Tables<"orders">;
+function AuthPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
-function AdminPanelPage() {
-  const [orders, setOrders] = useState<OrderTable[]>([]);
-  const [loading, setLoading] = useState(true);
+  // ✅ Verifica rol y redirige al destino correcto
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleSession = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      toast.error("Error al verificar permisos. Intenta de nuevo.");
+      await supabase.auth.signOut();
+      setCheckingSession(false);
+      return;
+    }
+
+    if (data?.role === "admin") {
+      // ✅ Redirige al dashboard de admin, NO a /admin (evita loop)
+      navigate({ to: "/admin" });
+    } else {
+      // ✅ Si no tiene rol admin, cierra sesión y avisa
+      toast.error("Acceso denegado: Tu cuenta no tiene permisos de administrador.");
+      await supabase.auth.signOut();
+      navigate({ to: "/cuenta" });
+    }
+  };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    // 1. Sesión persistente al cargar la página
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        handleSession(session.user.id);
+      } else {
+        setCheckingSession(false);
+      }
+    });
 
-  const fetchOrders = async () => {
+    // 2. Cambio en tiempo real (regreso de OAuth de Google o magic link)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && session?.user) {
+        handleSession(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [handleSession, navigate]);
+
+  // ✅ Google OAuth — redirectTo apunta a /admin donde vive el listener
+  const handleGoogleLogin = async () => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
-
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/admin`, // ✅ corregido
+          queryParams: { access_type: "offline", prompt: "consent" },
+        },
+      });
       if (error) throw error;
-      setOrders((data as OrderTable[]) || []);
-    } catch (error) {
-      toast.error("Error al cargar los pedidos");
+    } catch {
+      toast.error("No se pudo conectar con Google. Inténtalo de nuevo.");
+    }
+  };
+
+  // ✅ Magic link — redirectTo apunta a /admin donde vive el listener
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/admin`, // ✅ corregido
+        },
+      });
+      if (error) throw error;
+      toast.success("¡Te enviamos un enlace de acceso a tu correo!");
+    } catch {
+      toast.error("Error al enviar el enlace. Verifica tu correo.");
     } finally {
       setLoading(false);
     }
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: "paid" | "cancelled") => {
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: newStatus } as any)
-        .eq("id", orderId);
-
-      if (error) throw error;
-
-      toast.success(`Pedido ${newStatus === "paid" ? "Aprobado" : "Rechazado"} con éxito`);
-      setOrders(orders.map(order => order.id === orderId ? { ...order, status: newStatus } : order));
-    } catch (error) {
-      toast.error("No se pudo actualizar el estado del pedido");
-    }
-  };
-
-  if (loading) {
-    return <div className="p-24 text-center text-sm text-muted-foreground">Cargando panel de control...</div>;
+  // Muestra spinner mientras verifica sesión activa
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="flex flex-col gap-1 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-3xl tracking-wide">Gestión de Pedidos</h1>
-          <p className="text-sm text-muted-foreground">Revisa los pagos en tu app de Yape/Plin antes de aprobar los envíos.</p>
-        </div>
-        <button 
-          onClick={fetchOrders}
-          className="mt-4 sm:mt-0 px-4 py-2 text-xs uppercase tracking-widest font-medium border border-border rounded-full hover:bg-accent transition"
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="font-display text-4xl mb-2">Ingresa a Samka</h1>
+      <p className="text-sm text-muted-foreground mb-8">
+        Inicia sesión para gestionar tus compras y agilizar tu pago.
+      </p>
+
+      <div className="space-y-4">
+        {/* Google */}
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="flex w-full items-center justify-center gap-3 rounded-full border border-border bg-background px-4 py-3 text-sm font-medium shadow-sm transition hover:bg-accent"
         >
-          🔄 Actualizar Lista
+          <svg className="h-5 w-5" viewBox="0 0 24 24">
+            <path
+              fill="#EA4335"
+              d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.355 0 3.36 2.62 1.34 6.433l3.926 3.332z"
+            />
+            <path
+              fill="#4285F4"
+              d="M23.49 12.275c0-.826-.074-1.62-.21-2.386H12v4.512h6.446a5.51 5.51 0 0 1-2.39 3.613l3.737 2.899c2.186-2.014 3.447-4.98 3.447-8.638z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.266 14.235L1.34 17.567A11.934 11.934 0 0 0 12 24c3.055 0 5.782-1.014 7.782-2.738l-3.738-2.899a7.114 7.114 0 0 1-4.044 1.146 7.078 7.078 0 0 1-6.734-5.274z"
+            />
+            <path
+              fill="#34A853"
+              d="M5.266 9.765A7.043 7.043 0 0 1 5 12c0 .79.13 1.554.366 2.265l4.01-3.131-4.11-1.369z"
+            />
+          </svg>
+          Continuar con Google
         </button>
+
+        <div className="relative flex items-center justify-center py-2">
+          <div className="grow border-t border-border" />
+          <span className="mx-4 shrink text-xs uppercase tracking-widest text-muted-foreground">
+            O
+          </span>
+          <div className="grow border-t border-border" />
+        </div>
+
+        {/* Magic link */}
+        <form onSubmit={handleEmailLogin} className="space-y-3 text-left">
+          <div>
+            <label className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              placeholder="tu@correo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none transition focus:ring-2 focus:ring-gold/40"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? "Enviando..." : "Ingresar con mi correo"}
+          </button>
+        </form>
       </div>
-
-      {orders.length === 0 ? (
-        <div className="text-center py-24 text-muted-foreground border border-dashed border-border rounded-3xl mt-8">
-          Aún no tienes ningún pedido registrado en la tienda.
-        </div>
-      ) : (
-        <div className="mt-8 space-y-6">
-          {orders.map((order) => (
-            <div 
-              key={order.id} 
-              className={`rounded-3xl border p-6 bg-card shadow-sm transition-all duration-300 ${
-                order.status === "paid" ? "border-emerald-500/20 bg-emerald-500/5" : 
-                order.status === "cancelled" ? "border-destructive/20 bg-destructive/5" : "border-border"
-              }`}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border/60 pb-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-sm font-semibold tracking-wider bg-accent px-3 py-1 rounded-full">
-                      ID: #{order.id.slice(0, 6).toUpperCase()}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {order.created_at ? new Date(order.created_at).toLocaleDateString("es-PE", {
-                        day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
-                      }) : ""}
-                    </span>
-                  </div>
-                  <h3 className="font-display text-xl mt-3 text-card-foreground">{order.full_name}</h3>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Monto Total</p>
-                  <p className="font-display text-2xl text-gold font-semibold mt-1">
-                    S/ {(Number((order as any).total_amount || (order as any).total || 0)).toFixed(2)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 text-sm">
-                {/* Detalles de Operación */}
-                <div className="space-y-1 bg-accent/30 p-4 rounded-2xl border border-border/40">
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium block">Detalles de Operación</span>
-                  <p className="font-medium mt-1">Método: <span className="uppercase font-bold text-indigo-500">{order.payment_method}</span></p>
-                  <div className="mt-2">
-                    <span className="text-xs text-muted-foreground block">Código Ingresado por Cliente:</span>
-                    <span className="font-mono text-lg font-bold tracking-wider text-primary block mt-0.5">
-                      {(order as any).payment_reference || (order as any).operation_code || (order as any).order_number || "NINGUNO"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Contacto */}
-                <div className="space-y-1 py-1">
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium block">Contacto del Cliente</span>
-                  <p className="mt-2"><span className="text-muted-foreground">Telf:</span> +51 {order.phone}</p>
-                  <p className="truncate"><span className="text-muted-foreground">Email:</span> {order.email}</p>
-                </div>
-
-                {/* Dirección */}
-                <div className="space-y-1 py-1">
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium block">Dirección de Entrega</span>
-                  <p className="mt-2 text-muted-foreground leading-relaxed italic">
-                    {order.address}, {order.city}
-                  </p>
-                  {order.notes && (
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
-                      <span className="font-medium">Nota:</span> {order.notes}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border/60 pt-4 mt-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Estado actual:</span>
-                  <span className={`text-xs uppercase font-bold tracking-widest px-3 py-1 rounded-full ${
-                    order.status === "paid" ? "bg-emerald-500/10 text-emerald-600" :
-                    order.status === "cancelled" ? "bg-destructive/10 text-destructive" :
-                    "bg-amber-500/10 text-amber-600 animate-pulse"
-                  }`}>
-                    {order.status === "pending" ? "pendiente" : order.status === "paid" ? "pagado" : order.status}
-                  </span>
-                </div>
-
-                {order.status === "pending" && (
-                  <div className="flex gap-2 w-full sm:w-auto">
-                    <button
-                      onClick={() => updateOrderStatus(order.id, "cancelled")}
-                      className="flex-1 sm:flex-initial px-4 py-2 rounded-full border border-destructive/30 text-destructive hover:bg-destructive/5 text-xs font-medium transition"
-                    >
-                      ❌ Rechazar (Código Falso)
-                    </button>
-                    <button
-                      onClick={() => updateOrderStatus(order.id, "paid")}
-                      className="flex-1 sm:flex-initial px-5 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-medium transition shadow-sm"
-                    >
-                      ✓ Aprobar Pago Recibido
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
+  // eslint-disable-next-line prettier/prettier
 }
