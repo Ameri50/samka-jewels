@@ -2,7 +2,7 @@ import { useState } from "react";
 
 // Importa tus imágenes directamente para que Vite las procese correctamente
 import qrYape from "@/assets/qr-yape.jpeg";
-import qrPlin from "@/assets/qr-plin.png";
+import qrPlin from "@/assets/qr-yape.jpeg";
 
 type Props = {
   method: "yape" | "plin";
