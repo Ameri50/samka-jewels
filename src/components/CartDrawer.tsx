@@ -1,21 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
-import { useCart } from "@/lib/cart-store";
-import { useState, useEffect } from "react";
+import { useCart, itemKey } from "@/lib/cart-store";
 
 export function CartDrawer() {
-  const { items, open, setOpen, updateQty, remove, subtotal, itemKey } = useCart();
-  const [isMounted, setIsMounted] = useState(false);
+  const { items, open, setOpen, updateQty, remove, subtotal } = useCart();
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) return null;
-
-  // eslint-disable-next-line prettier/prettier
-  // 🔴 ¡ESTA ES LA MAGIA! Si 'open' es falso, el carrito desaparece por completo del HTML 
-  // y no se queda atascado en el fondo a la derecha de la pantalla.
   if (!open) return null;
 
   return (
@@ -25,9 +14,9 @@ export function CartDrawer() {
         className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm transition-opacity opacity-100"
         onClick={() => setOpen(false)}
       />
-      {/* Panel del Carrito - Le quitamos el translate-x-full problemático */}
-      // eslint-disable-next-line prettier/prettier
-      <aside className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-background shadow-luxe transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] translate-x-0">
+
+      {/* Panel del carrito */}
+      <aside className="fixed right-0 top-0 z-50 h-full w-full max-w-md bg-background shadow-luxe translate-x-0">
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-border px-6 py-5">
             <h2 className="font-display text-xl">Tu bolsa</h2>
@@ -82,7 +71,6 @@ export function CartDrawer() {
                           </div>
                           {Object.keys(it.attributes).length > 0 && (
                             <p className="mt-1 text-xs text-muted-foreground">
-                              // eslint-disable-next-line prettier/prettier
                               {Object.entries(it.attributes)
                                 .map(([k2, v]) => `${k2}: ${v}`)
                                 .join(" · ")}

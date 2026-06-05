@@ -1,7 +1,8 @@
-// Lightweight cart store using localStorage + custom events.
-import { useEffect, useState, useCallback } from "react";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export type CartItem = {
+  id: unknown;
   productId: string;
   name: string;
   image: string;
@@ -11,101 +12,56 @@ export type CartItem = {
   attributesPriceMod: number;
 };
 
-const KEY = "samka-cart-v1";
-const EVT = "samka-cart-change";
-const EVT_OPEN = "samka-cart-open-change"; // <-- NUEVO: Evento global para abrir/cerrar
-
-// Variable interna para guardar el estado de apertura fuera del ciclo del Hook
-let globalOpen = false;
-
-function read(): CartItem[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as CartItem[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function write(items: CartItem[]) {
-  localStorage.setItem(KEY, JSON.stringify(items));
-  window.dispatchEvent(new Event(EVT));
-}
-
-function itemKey(i: CartItem) {
+export function itemKey(i: CartItem) {
   return `${i.productId}::${JSON.stringify(i.attributes)}`;
 }
 
-// Función global para cambiar el estado de apertura desde cualquier parte
-function writeOpen(isOpen: boolean) {
-  globalOpen = isOpen;
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent(EVT_OPEN, { detail: isOpen }));
-  }
-}
+type CartStore = {
+  items: CartItem[];
+  open: boolean;
+  setOpen: (val: boolean) => void;
+  add: (item: CartItem) => void;
+  remove: (key: string) => void;
+  updateQty: (key: string, qty: number) => void;
+  clear: () => void;
+  subtotal: number;
+  count: number;
+};
 
-export function useCart() {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [open, setOpenState] = useState(globalOpen); // <-- Estado sincronizado
-
-  // Interceptamos la función setOpen original para que despache el evento global
-  const setOpen = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
-    const nextVal = typeof val === "function" ? val(globalOpen) : val;
-    writeOpen(nextVal);
-  }, []);
-
-  useEffect(() => {
-    setItems(read());
-    setOpenState(globalOpen);
-
-    const onChange = () => setItems(read());
-    const onOpenChange = (e: Event) => {
-      setOpenState((e as CustomEvent).detail);
-    };
-
-    window.addEventListener(EVT, onChange);
-    window.addEventListener("storage", onChange);
-    window.addEventListener(EVT_OPEN, onOpenChange); // <-- Escucha cambios de apertura
-
-    return () => {
-      window.removeEventListener(EVT, onChange);
-      window.removeEventListener("storage", onChange);
-      window.removeEventListener(EVT_OPEN, onOpenChange);
-    };
-  }, []);
-
-  const add = useCallback((item: CartItem) => {
-    const current = read();
-    const k = itemKey(item);
-    const idx = current.findIndex((c) => itemKey(c) === k);
-    if (idx >= 0) {
-      current[idx].quantity += item.quantity;
-    } else {
-      current.push(item);
-    }
-    write(current);
-    writeOpen(true); // <-- Abre el carrito globalmente al añadir un producto
-  }, []);
-
-  const remove = useCallback((key: string) => {
-    write(read().filter((c) => itemKey(c) !== key));
-  }, []);
-
-  const updateQty = useCallback((key: string, qty: number) => {
-    const next = read().map((c) =>
-      itemKey(c) === key ? { ...c, quantity: Math.max(1, qty) } : c,
-    );
-    write(next);
-  }, []);
-
-  const clear = useCallback(() => write([]), []);
-
-  const subtotal = items.reduce(
-    (s, i) => s + (i.unitPrice + i.attributesPriceMod) * i.quantity,
-    0,
-  );
-  const count = items.reduce((s, i) => s + i.quantity, 0);
-
-  return { items, add, remove, updateQty, clear, subtotal, count, open, setOpen, itemKey };
-}
+export const useCart = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      open: false,
+      setOpen: (val) => set({ open: val }),
+      add: (item) => {
+        const items = get().items;
+        const k = itemKey(item);
+        const idx = items.findIndex((c) => itemKey(c) === k);
+        const next =
+          idx >= 0
+            ? items.map((c, i) => (i === idx ? { ...c, quantity: c.quantity + item.quantity } : c))
+            : [...items, item];
+        set({ items: next, open: true });
+      },
+      remove: (key) => set({ items: get().items.filter((c) => itemKey(c) !== key) }),
+      updateQty: (key, qty) =>
+        set({
+          items: get().items.map((c) =>
+            itemKey(c) === key ? { ...c, quantity: Math.max(1, qty) } : c,
+          ),
+        }),
+      clear: () => set({ items: [] }),
+      get subtotal() {
+        return get().items.reduce(
+          (s, i) => s + (i.unitPrice + i.attributesPriceMod) * i.quantity,
+          0,
+        );
+      },
+      get count() {
+        return get().items.reduce((s, i) => s + i.quantity, 0);
+      },
+    }),
+    { name: "samka-cart-v1" },
+  ),
+);

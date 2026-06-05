@@ -125,6 +125,7 @@ function ProductPage() {
       quantity: qty,
       attributes: Object.fromEntries(attrEntries.map(([k, v]) => [k, v.value])),
       attributesPriceMod: modSum,
+      id: undefined,
     });
 
     toast.success("Agregado a tu bolsa");
