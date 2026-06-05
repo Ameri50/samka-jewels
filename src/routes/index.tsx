@@ -13,11 +13,12 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
 import { resolveImg } from "@/lib/img";
-import heroImg from "@/assets/hero.jpg";
-import catAnillos from "@/assets/cat-anillos.jpg";
-import catAretes from "@/assets/cat-aretes.jpg";
-import catCollares from "@/assets/cat-collares.jpg";
-import catPulseras from "@/assets/cat-pulseras.jpg";
+
+const heroImg = "/assets/hero.jpg";
+const catAnillos = "/assets/cat-anillos.jpg";
+const catAretes = "/assets/cat-aretes.jpg";
+const catCollares = "/assets/cat-collares.jpg";
+const catPulseras = "/assets/cat-pulseras.jpg";
 
 /** Fallback local por slug cuando Supabase no tiene image_url */
 const LOCAL_CAT_IMGS: Record<string, string> = {
@@ -95,7 +96,6 @@ function CategoriesCarousel({ categories }: { categories: Category[] }) {
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Detecta cuántas slides son visibles según breakpoint
   const [visible, setVisible] = useState(VISIBLE_DESKTOP);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -111,7 +111,6 @@ function CategoriesCarousel({ categories }: { categories: Category[] }) {
   const next = useCallback(() => setCurrent((c) => (c >= maxIndex ? 0 : c + 1)), [maxIndex]);
   const prev = useCallback(() => setCurrent((c) => (c <= 0 ? maxIndex : c - 1)), [maxIndex]);
 
-  // Auto-avance; se reinicia cuando cambia maxIndex, visible o next
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(next, SLIDE_INTERVAL_MS);
@@ -135,13 +134,11 @@ function CategoriesCarousel({ categories }: { categories: Category[] }) {
 
   if (categories.length === 0) return null;
 
-  // Ancho de cada tarjeta: reparte el espacio menos los gaps entre slides visibles
   const cardWidth = `calc(${100 / visible}% - ${((visible - 1) * 20) / visible}px)`;
   const trackOffset = `translateX(calc(-${current} * (100% / ${visible}) - ${current} * (20px / ${visible})))`;
 
   return (
     <div className="relative">
-      {/* Track con overflow oculto */}
       <div className="overflow-hidden rounded-2xl">
         <div
           className="flex gap-5 transition-transform duration-700 ease-in-out"
@@ -160,7 +157,6 @@ function CategoriesCarousel({ categories }: { categories: Category[] }) {
                 className="group relative shrink-0 overflow-hidden rounded-2xl hover-lift"
                 style={{ width: cardWidth }}
               >
-                {/* Imagen: Supabase → fallback local por slug → fallback por nombre */}
                 <div className="aspect-4/5 w-full overflow-hidden rounded-2xl bg-muted">
                   {catImgSrc ? (
                     <img
@@ -176,7 +172,6 @@ function CategoriesCarousel({ categories }: { categories: Category[] }) {
                   )}
                 </div>
 
-                {/* Overlay y texto */}
                 <div className="absolute inset-0 rounded-2xl bg-linear-to-t from-black/70 via-black/20 to-transparent" />
                 <div className="absolute bottom-0 p-5 text-white">
                   <h3 className="font-display text-xl drop-shadow md:text-2xl">{c.name}</h3>
@@ -190,7 +185,6 @@ function CategoriesCarousel({ categories }: { categories: Category[] }) {
         </div>
       </div>
 
-      {/* Flechas */}
       {categories.length > visible && (
         <>
           <button
@@ -212,7 +206,6 @@ function CategoriesCarousel({ categories }: { categories: Category[] }) {
         </>
       )}
 
-      {/* Dots */}
       <div className="mt-5 flex justify-center gap-2">
         {Array.from({ length: maxIndex + 1 }).map((_, i) => (
           <button
@@ -262,7 +255,6 @@ function HomePage() {
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gradient-hero">
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:gap-6 md:px-8 md:py-24 lg:py-28">
-          {/* Texto — sin reveal para que no empiece oculto en el hero */}
           <div className="order-2 md:order-1">
             <span className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-cream/60 px-4 py-1.5 text-xs uppercase tracking-widest">
               <Sparkles className="h-3.5 w-3.5 text-gold" />
@@ -304,7 +296,6 @@ function HomePage() {
             </div>
           </div>
 
-          {/* Imagen hero */}
           <div className="order-1 md:order-2">
             <div className="relative">
               <div className="absolute -inset-6 rounded-4xl bg-gradient-gold opacity-20 blur-2xl" />
@@ -339,7 +330,6 @@ function HomePage() {
           </Link>
         </div>
 
-        {/* Pasarela automática */}
         <CategoriesCarousel categories={categories} />
       </section>
 
