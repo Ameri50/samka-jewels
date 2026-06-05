@@ -17,6 +17,7 @@
           "iframe[loading]"
         ]
       }
-    ]
+    ],
+    "typescript-config/consistent-casing": "off"
   }
 }
