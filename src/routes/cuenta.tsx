@@ -61,12 +61,18 @@ function AccountPage() {
         </div>
         <div className="flex gap-2">
           {isAdmin && (
-            <Link to="/admin" className="rounded-full border border-gold/40 px-5 py-2 text-sm hover:bg-accent">
+            <Link
+              to="/admin"
+              className="rounded-full border border-gold/40 px-5 py-2 text-sm hover:bg-accent"
+            >
               Panel admin
             </Link>
           )}
           <button
-            onClick={async () => { await signOut(); navigate({ to: "/" }); }}
+            onClick={async () => {
+              await signOut();
+              navigate({ to: "/" });
+            }}
             className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm hover:bg-accent"
           >
             <LogOut className="h-4 w-4" /> Salir
@@ -81,7 +87,10 @@ function AccountPage() {
       {orders.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-border p-12 text-center">
           <p className="text-muted-foreground">Aún no tienes pedidos</p>
-          <Link to="/catalogo" className="mt-4 inline-flex rounded-full bg-gradient-gold px-6 py-2.5 text-sm text-primary-foreground">
+          <Link
+            to="/catalogo"
+            className="mt-4 inline-flex rounded-full bg-gradient-gold px-6 py-2.5 text-sm text-primary-foreground"
+          >
             Explorar catálogo
           </Link>
         </div>
@@ -97,20 +106,40 @@ function AccountPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="rounded-full bg-accent px-3 py-1 text-xs">{STATUS_LABEL[o.status] ?? o.status}</span>
-                  <p className="mt-2 font-display text-xl text-gradient-gold">S/ {Number(o.total).toFixed(2)}</p>
+                  <span className="rounded-full bg-accent px-3 py-1 text-xs">
+                    {STATUS_LABEL[o.status] ?? o.status}
+                  </span>
+                  <p className="mt-2 font-display text-xl text-gradient-gold">
+                    S/ {Number(o.total).toFixed(2)}
+                  </p>
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
-                {o.order_items?.map((it: { id: string; product_image: string | null; product_name: string; quantity: number }) => (
-                  <div key={it.id} className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2">
-                    {it.product_image && <img src={it.product_image} alt="" className="h-10 w-10 rounded-md object-cover" />}
-                    <div className="text-xs">
-                      <p className="font-medium">{it.product_name}</p>
-                      <p className="text-muted-foreground">x{it.quantity}</p>
+                {o.order_items?.map(
+                  (it: {
+                    id: string;
+                    product_image: string | null;
+                    product_name: string;
+                    quantity: number;
+                  }) => (
+                    <div
+                      key={it.id}
+                      className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2"
+                    >
+                      {it.product_image && (
+                        <img
+                          src={it.product_image}
+                          alt=""
+                          className="h-10 w-10 rounded-md object-cover"
+                        />
+                      )}
+                      <div className="text-xs">
+                        <p className="font-medium">{it.product_name}</p>
+                        <p className="text-muted-foreground">x{it.quantity}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </div>
           ))}
