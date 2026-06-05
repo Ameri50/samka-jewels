@@ -13,5 +13,15 @@ export default defineConfig({
   ],
   build: {
     outDir: "dist",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom"],
+          router: ["@tanstack/react-router", "@tanstack/react-query"],
+          supabase: ["@supabase/supabase-js"],
+          ui: ["lucide-react", "sonner"],
+        },
+      },
+    },
   },
 });
