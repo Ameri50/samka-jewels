@@ -12,14 +12,11 @@ type Props = {
 
 export function ProductCard({ slug, name, price, image, category }: Props) {
   const isValidImage = image && image.trim() !== "";
+  // eslint-disable-next-line prettier/prettier
   const imgSrc = isValidImage ? resolveImg(image) : "https://placehold.co/800x800?text=Samka+Jewels";
 
   return (
-    <Link
-      to="/producto/$slug"
-      params={{ slug }}
-      className="group block"
-    >
+    <Link to="/producto/$slug" params={{ slug }} className="group block">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-cream aspect-square shadow-card">
         <img
           src={imgSrc}
@@ -48,7 +45,9 @@ export function ProductCard({ slug, name, price, image, category }: Props) {
       <div className="mt-4 flex items-start justify-between gap-3">
         <div>
           {category && (
-            <p className="text-[11px] tracking-widest uppercase text-muted-foreground">{category}</p>
+            <p className="text-[11px] tracking-widest uppercase text-muted-foreground">
+              {category}
+            </p>
           )}
           <h3 className="font-display text-lg mt-0.5 group-hover:text-gold transition-colors duration-200">
             {name}
