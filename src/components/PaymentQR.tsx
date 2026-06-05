@@ -1,8 +1,7 @@
 import { useState } from "react";
 
-// Importa tus imágenes directamente para que Vite las procese correctamente
-import qrYape from "@/assets/qr-yape.jpeg";
-import qrPlin from "@/assets/qr-yape.jpeg";
+const qrYape = "/assets/qr-yape.jpeg";
+const qrPlin = "/assets/qr-yape.jpeg";
 
 type Props = {
   method: "yape" | "plin";
@@ -47,7 +46,6 @@ export function PaymentQR({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              // eslint-disable-next-line prettier/prettier
               <p className="text-xs tracking-widest uppercase opacity-80">Pago seguro</p>
               <h3 className="text-3xl font-bold mt-1">{methodLabel}</h3>
             </div>
@@ -64,7 +62,7 @@ export function PaymentQR({
                   <p className="font-bold mb-1 text-amber-600">Falta el QR de {methodLabel}</p>
                   <p className="text-slate-400 mt-1">Archivo esperado:</p>
                   <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px] block mt-1 text-slate-700 break-all">
-                    src/assets/qr-{isYape ? "yape.jpeg" : "plin.png"}
+                    public/assets/qr-{isYape ? "yape.jpeg" : "plin.png"}
                   </code>
                 </div>
               ) : (

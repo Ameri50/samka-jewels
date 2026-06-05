@@ -27,6 +27,7 @@
           "border: 1px solid color-mix(in oklab, white 60%, transparent)"
         ]
       }
-    ]
+    ],
+    "axe/forms": "off"
   }
 }

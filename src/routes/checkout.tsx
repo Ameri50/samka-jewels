@@ -31,23 +31,31 @@ function CheckoutPage() {
   const [step, setStep] = useState<"info" | "pay" | "done">("info");
   const [method, setMethod] = useState<"yape" | "plin">("yape");
   const [orderNumber, setOrderNumber] = useState<string>("");
-  
+
   // Código de operación escrito por el cliente
   const [operationCode, setOperationCode] = useState<string>("");
 
   const [form, setForm] = useState({
-    fullName: "", phone: "", email: user?.email ?? "", address: "", city: "Lima", notes: "",
+    fullName: "",
+    phone: "",
+    email: user?.email ?? "",
+    address: "",
+    city: "Lima",
+    notes: "",
   });
 
   useEffect(() => {
     if (user?.email && !form.email) setForm((f) => ({ ...f, email: user.email! }));
-  }, [user]);
+  }, [form.email, user]);
 
   if (items.length === 0 && step !== "done") {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
         <h1 className="font-display text-3xl">Tu bolsa está vacía</h1>
-        <Link to="/catalogo" className="mt-6 inline-flex rounded-full bg-gradient-gold px-6 py-3 text-sm text-primary-foreground">
+        <Link
+          to="/catalogo"
+          className="mt-6 inline-flex rounded-full bg-gradient-gold px-6 py-3 text-sm text-primary-foreground"
+        >
           Ir al catálogo
         </Link>
       </div>
@@ -96,27 +104,28 @@ function CheckoutPage() {
           shipping: SHIPPING,
           total: total,
           total_amount: total,
-          payment_method: method, 
+          payment_method: method,
           // Guardamos el código de operación de manera nativa e independiente de las notas
-          payment_reference: operationCode.trim(), 
+          payment_reference: operationCode.trim(),
           status: "pending",
-        } as any) // El truco "as any" evita discrepancias estrictas en lo que corre la sync
+        } as never) // El truco "as any" evita discrepancias estrictas en lo que corre la sync
         .select()
         .single();
-        
+
       if (error) throw error;
 
       const itemsToInsert = items.map((i) => ({
         order_id: order.id,
         product_id: i.productId,
         product_name: i.name,
-        product_image: i.image && i.image.trim() !== "" ? i.image : "https://placehold.co/100x100?text=Samka",
+        product_image:
+          i.image && i.image.trim() !== "" ? i.image : "https://placehold.co/100x100?text=Samka",
         unit_price: i.unitPrice + i.attributesPriceMod,
         quantity: i.quantity,
         selected_attributes: i.attributes,
         subtotal: (i.unitPrice + i.attributesPriceMod) * i.quantity,
       }));
-      
+
       const { error: e2 } = await supabase.from("order_items").insert(itemsToInsert);
       if (e2) throw e2;
 
@@ -135,11 +144,14 @@ function CheckoutPage() {
         <CheckCircle2 className="mx-auto h-16 w-16 text-gold" />
         <h1 className="mt-6 font-display text-4xl">¡Pedido confirmado!</h1>
         <p className="mt-3 text-muted-foreground">
-          Tu pedido <span className="font-mono text-foreground font-semibold">#{orderNumber}</span> fue registrado.
-          Validaremos tu pago en las próximas horas con el código enviado.
+          Tu pedido <span className="font-mono text-foreground font-semibold">#{orderNumber}</span>{" "}
+          fue registrado. Validaremos tu pago en las próximas horas con el código enviado.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Link to="/cuenta" className="rounded-full bg-gradient-gold px-6 py-3 text-sm text-primary-foreground">
+          <Link
+            to="/cuenta"
+            className="rounded-full bg-gradient-gold px-6 py-3 text-sm text-primary-foreground"
+          >
             Ver mis pedidos
           </Link>
           <Link to="/catalogo" className="rounded-full border border-border px-6 py-3 text-sm">
@@ -163,17 +175,43 @@ function CheckoutPage() {
       <div className="grid gap-10 md:grid-cols-[1fr_400px]">
         <div>
           {step === "info" && (
-            <form onSubmit={goToPayment} className="rounded-3xl border border-border bg-card p-8 shadow-card space-y-5">
+            <form
+              onSubmit={goToPayment}
+              className="rounded-3xl border border-border bg-card p-8 shadow-card space-y-5"
+            >
               <h2 className="font-display text-2xl">Datos de envío</h2>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Nombre completo" value={form.fullName} onChange={(v) => setForm({ ...form, fullName: v })} />
-                <Field label="Teléfono / WhatsApp" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+                <Field
+                  label="Nombre completo"
+                  value={form.fullName}
+                  onChange={(v) => setForm({ ...form, fullName: v })}
+                />
+                <Field
+                  label="Teléfono / WhatsApp"
+                  value={form.phone}
+                  onChange={(v) => setForm({ ...form, phone: v })}
+                />
               </div>
-              <Field label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
-              <Field label="Dirección (Calle, Nro, Dpto)" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
-              <Field label="Departamento / Ciudad" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+              <Field
+                label="Email"
+                type="email"
+                value={form.email}
+                onChange={(v) => setForm({ ...form, email: v })}
+              />
+              <Field
+                label="Dirección (Calle, Nro, Dpto)"
+                value={form.address}
+                onChange={(v) => setForm({ ...form, address: v })}
+              />
+              <Field
+                label="Departamento / Ciudad"
+                value={form.city}
+                onChange={(v) => setForm({ ...form, city: v })}
+              />
               <div>
-                <label className="text-xs tracking-widest uppercase text-muted-foreground">Notas o Referencia (opcional)</label>
+                <label className="text-xs tracking-widest uppercase text-muted-foreground">
+                  Notas o Referencia (opcional)
+                </label>
                 <textarea
                   rows={3}
                   value={form.notes}
@@ -216,7 +254,11 @@ function CheckoutPage() {
               />
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep("info")} className="flex-1 rounded-full border border-border py-3 text-sm hover:bg-accent transition">
+                <button
+                  type="button"
+                  onClick={() => setStep("info")}
+                  className="flex-1 rounded-full border border-border py-3 text-sm hover:bg-accent transition"
+                >
                   Volver
                 </button>
                 <button
@@ -237,22 +279,34 @@ function CheckoutPage() {
           <ul className="space-y-3 max-h-72 overflow-y-auto pr-2">
             {items.map((i, idx) => (
               <li key={idx} className="flex gap-3 text-sm">
-                <img 
-                  src={i.image && i.image.trim() !== "" ? i.image : "https://placehold.co/100x100?text=Samka"} 
-                  alt={i.name} 
-                  className="h-14 w-14 rounded-lg object-cover bg-muted" 
+                <img
+                  src={
+                    i.image && i.image.trim() !== ""
+                      ? i.image
+                      : "https://placehold.co/100x100?text=Samka"
+                  }
+                  alt={i.name}
+                  className="h-14 w-14 rounded-lg object-cover bg-muted"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{i.name}</p>
                   <p className="text-xs text-muted-foreground">x{i.quantity}</p>
                 </div>
-                <span className="font-medium">S/ {((i.unitPrice + i.attributesPriceMod) * i.quantity).toFixed(2)}</span>
+                <span className="font-medium">
+                  S/ {((i.unitPrice + i.attributesPriceMod) * i.quantity).toFixed(2)}
+                </span>
               </li>
             ))}
           </ul>
           <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
-            <div className="flex justify-between"><span>Subtotal</span><span>S/ {subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span>Envío</span><span>S/ {SHIPPING.toFixed(2)}</span></div>
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+              <span>S/ {subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Envío</span>
+              <span>S/ {SHIPPING.toFixed(2)}</span>
+            </div>
             <div className="flex justify-between border-t border-border pt-3 font-semibold text-base">
               <span>Total</span>
               <span className="text-gradient-gold">S/ {total.toFixed(2)}</span>
@@ -264,7 +318,17 @@ function CheckoutPage() {
   );
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
   return (
     <div>
       <label className="text-xs tracking-widest uppercase text-muted-foreground">{label}</label>
