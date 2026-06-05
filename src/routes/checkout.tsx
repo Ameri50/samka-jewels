@@ -44,9 +44,10 @@ function CheckoutPage() {
     notes: "",
   });
 
+  // FIX: removed form.email from deps to prevent infinite re-render loop
   useEffect(() => {
-    if (user?.email && !form.email) setForm((f) => ({ ...f, email: user.email! }));
-  }, [form.email, user]);
+    if (user?.email) setForm((f) => ({ ...f, email: user.email! }));
+  }, [user]);
 
   if (items.length === 0 && step !== "done") {
     return (
